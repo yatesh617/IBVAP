@@ -1,0 +1,15 @@
+{
+  "active_camera": "cam_01",
+  "cameras": {
+    "cam_01": {
+      "name": "Sector-01 Live Webcam",
+      "source": 0,
+      "restricted_zone_ratio": [[0.55, 0.20], [0.95, 0.20], [0.95, 0.95], [0.55, 0.95]]
+    },
+    "cam_02": {
+      "name": "Sector-02 Border Fence (Sample Video)",
+      "source": "videos/border_sample.mp4",
+      "restricted_zone_ratio": [[0.25, 0.30], [0.85, 0.30], [0.90, 0.95], [0.20, 0.95]]
+    }
+  }
+}

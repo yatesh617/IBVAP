@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IBVAP | Border Surveillance Command Center</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; }
+    body { background: #070d1a; color: #e2e8f0; min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    /* Login Overlay */
+    #loginScreen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at top, #132242, #070d1a 70%); padding: 20px;
+    }
+    .login-card {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 12px;
+      width: 100%; max-width: 420px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+    .badge-mha {
+      display: inline-block; background: rgba(56,189,248,0.12); color: #38bdf8;
+      border: 1px solid rgba(56,189,248,0.3); padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .login-card h1 { font-size: 22px; margin-bottom: 6px; color: #f8fafc; }
+    .login-card p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+    .field input {
+      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155;
+      background: #020617; color: #f8fafc; font-size: 14px;
+    }
+    .btn {
+      padding: 10px 16px; border: none; border-radius: 8px; font-weight: 600;
+      cursor: pointer; font-size: 13px; transition: 0.2s;
+    }
+    .btn-primary { background: #0284c7; color: #fff; width: 100%; }
+    .btn-primary:hover { background: #0369a1; }
+    .quick-fill { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-ghost {
+      flex: 1; background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+      padding: 7px; font-size: 12px;
+    }
+    .btn-ghost:hover { background: #334155; }
+    .error-msg { color: #f87171; font-size: 12px; margin-top: 10px; text-align: center; }
+
+    /* Topbar */
+    header {
+      background: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 24px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .pulse-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+    }
+    .brand h2 { font-size: 17px; color: #f8fafc; }
+    .brand span { font-size: 12px; color: #64748b; display: block; }
+    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    select {
+      background: #020617; color: #f8fafc; border: 1px solid #334155;
+      padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    }
+    .btn-night { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .btn-night.active { background: #15803d; color: #fff; border-color: #22c55e; }
+    .user-pill {
+      background: #1e293b; padding: 6px 12px; border-radius: 8px; font-size: 12px; color: #38bdf8;
+    }
+    .btn-logout { background: #7f1d1d; color: #fecaca; padding: 8px 12px; }
+
+    /* Main Container */
+    main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px; margin-bottom: 20px;
+    }
+    .kpi {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 16px;
+    }
+    .kpi .label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+    .kpi .value { font-size: 24px; font-weight: 700; color: #f8fafc; }
+    .kpi .sub { font-size: 11px; color: #38bdf8; margin-top: 4px; }
+
+    .workspace { display: grid; grid-template-columns: 1.45fr 1fr; gap: 18px; margin-bottom: 20px; }
+    @media (max-width: 980px) { .workspace { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 16px; display: flex; flex-direction: column;
+    }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; font-size: 14px; font-weight: 600; color: #f1f5f9;
+    }
+    .video-box {
+      background: #020617; border: 2px solid #1e293b; border-radius: 8px;
+      overflow: hidden; position: relative; min-height: 320px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .video-box.alert-active { border-color: #ef4444; box-shadow: 0 0 18px rgba(239,68,68,0.45); }
+    .video-box img { width: 100%; height: auto; display: block; }
+    .alert-banner {
+      margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+      background: #1e293b; color: #94a3b8; border-left: 4px solid #38bdf8;
+    }
+    .alert-banner.danger {
+      background: rgba(127, 29, 29, 0.45); color: #fecaca; border-left-color: #ef4444;
+    }
+
+    /* Analytics & Audit */
+    .chart-bars {
+      display: flex; align-items: flex-end; gap: 8px; height: 140px;
+      padding: 14px 8px 6px; background: #020617; border-radius: 8px; margin-bottom: 14px;
+    }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .bar { width: 100%; max-width: 28px; background: #0284c7; border-radius: 4px 4px 0 0; min-height: 4px; transition: 0.3s; }
+    .bar-label { font-size: 10px; color: #94a3b8; margin-top: 5px; }
+    .audit-list { max-height: 170px; overflow-y: auto; font-size: 12px; }
+    .audit-item { padding: 7px 0; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    .audit-item span { color: #64748b; font-size: 11px; margin-right: 6px; }
+
+    /* Tabs & Tables */
+    .tabs { display: flex; gap: 10px; margin-bottom: 12px; }
+    .tab-btn {
+      background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+      padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .tab-btn.active { background: #0284c7; color: #fff; border-color: #0284c7; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
+    th { color: #94a3b8; font-weight: 600; background: #020617; }
+    .thumb { width: 72px; height: 46px; object-fit: cover; border-radius: 4px; border: 1px solid #334155; cursor: pointer; }
+    .mono { font-family: Consolas, monospace; font-size: 11.5px; color: #38bdf8; }
+    .btn-verify { background: #1e293b; color: #f8fafc; border: 1px solid #475569; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .btn-verify:hover { background: #334155; }
+    .status-ok { color: #4ade80; font-weight: 700; }
+    .status-bad { color: #f87171; font-weight: 700; }
+
+    /* Image Modal */
+    #imgModal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px;
+    }
+    #imgModal img { max-width: 90%; max-height: 85vh; border-radius: 8px; border: 2px solid #38bdf8; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="badge-mha">MINISTRY OF HOME AFFAIRS • SIH26187</div>
+      <h1>IBVAP Command Center</h1>
+      <p>AI-Based Border Video Analytics &amp; Blockchain Evidence Platform</p>
+      <div class="field">
+        <label>Officer Username</label>
+        <input type="text" id="username" placeholder="commander or operator" />
+      </div>
+      <div class="field">
+        <label>Security Passkey</label>
+        <input type="password" id="password" placeholder="Enter password" />
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Authenticate &amp; Launch</button>
+      <div class="quick-fill">
+        <button class="btn btn-ghost" onclick="fillDemo('commander','mha@2026')">Demo: Commander</button>
+        <button class="btn btn-ghost" onclick="fillDemo('operator','watch@2026')">Demo: Operator</button>
+      </div>
+      <div id="loginError" class="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <header>
+      <div class="brand">
+        <div class="pulse-dot"></div>
+        <div>
+          <h2>IBVAP • Border Surveillance Command Center</h2>
+          <span>Existing CCTV AI Analytics • Blockchain Tamper-Proof Evidence</span>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="cameraSelect" onchange="switchCamera(this.value)"></select>
+        <button id="nightBtn" class="btn btn-night" onclick="toggleNightMode()">Night Vision: OFF</button>
+        <div id="userBadge" class="user-pill"></div>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="label">Total Intrusions Detected</div>
+          <div class="value" id="kpiIncidents">0</div>
+          <div class="sub">Auto-captured &amp; hashed</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Surveillance Stream</div>
+          <div class="value" style="color:#4ade80;">ACTIVE</div>
+          <div class="sub" id="kpiCamName">Sector-01</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Blockchain Blocks Sealed</div>
+          <div class="value" id="kpiBlocks">1</div>
+          <div class="sub">SHA-256 Hash-Chained Ledger</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Cybersecurity Status</div>
+          <div class="value" style="color:#38bdf8;">RBAC ON</div>
+          <div class="sub">Audit logging active</div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="panel">
+          <div class="panel-header">
+            <span>Live AI Intrusion Detection Feed</span>
+            <span style="font-size:11px; color:#38bdf8;">YOLO11 + ByteTrack</span>
+          </div>
+          <div id="videoBox" class="video-box">
+            <img id="videoStream" alt="Live CCTV Stream" />
+          </div>
+          <div id="alertBanner" class="alert-banner">
+            System armed. Monitoring restricted perimeter zone...
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span>Intrusion Analytics (By Hour)</span></div>
+          <div id="chartBars" class="chart-bars"></div>
+          <div class="panel-header" style="margin-top:4px;"><span>Cybersecurity &amp; Access Audit Log</span></div>
+          <div id="auditList" class="audit-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="tabs">
+          <button id="tabEvidence" class="tab-btn active" onclick="showTab('evidence')">Evidence Locker &amp; Tamper Check</button>
+          <button id="tabChain" class="tab-btn" onclick="showTab('chain')">Immutable Blockchain Explorer</button>
+        </div>
+
+        <div id="evidenceTab" class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Snapshot</th>
+                <th>Timestamp</th>
+                <th>Camera</th>
+                <th>Intruder ID</th>
+                <th>SHA-256 Evidence Hash</th>
+                <th>Block / Tx ID</th>
+                <th>Integrity Verification</th>
+              </tr>
+            </thead>
+            <tbody id="evidenceTable"></tbody>
+          </table>
+        </div>
+
+        <div id="chainTab" class="table-wrap hidden">
+          <table>
+            <thead>
+              <tr>
+                <th>Block #</th>
+                <th>Timestamp</th>
+                <th>Evidence File</th>
+                <th>Previous Block Hash</th>
+                <th>Current Block Hash</th>
+                <th>Tx ID</th>
+              </tr>
+            </thead>
+            <tbody id="chainTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="imgModal" class="hidden" onclick="this.classList.add('hidden')">
+    <img id="modalImg" src="" alt="Evidence Full View" />
+  </div>
+
+  <script>
+    let pollTimer = null;
+    let verificationCache = {};
+
+    function fillDemo(u, p) {
+      document.getElementById("username").value = u;
+      document.getElementById("password").value = p;
+    }
+
+    async function doLogin() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const err = document.getElementById("loginError");
+      err.textContent = "";
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          err.textContent = "Authentication failed. Check credentials.";
+          return;
+        }
+        const data = await res.json();
+        document.getElementById("userBadge").textContent = `${data.username.toUpperCase()} (${data.role})`;
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+        document.getElementById("videoStream").src = "/video_feed?t=" + Date.now();
+        await refreshDashboard();
+        pollTimer = setInterval(refreshDashboard, 3000);
+      } catch (e) {
+        err.textContent = "Server error. Make sure backend/api.py is running.";
+      }
+    }
+
+    function logout() {
+      if (pollTimer) clearInterval(pollTimer);
+      document.getElementById("videoStream").src = "";
+      document.getElementById("dashboard").classList.add("hidden");
+      document.getElementById("loginScreen").classList.remove("hidden");
+    }
+
+    async function switchCamera(camId) {
+      await fetch(`/api/switch_camera/${camId}`, { method: "POST" });
+      await refreshDashboard();
+    }
+
+    async function toggleNightMode() {
+      const res = await fetch("/api/toggle_night_mode", { method: "POST" });
+      const data = await res.json();
+      updateNightBtn(data.night_mode);
+    }
+
+    function updateNightBtn(isOn) {
+      const btn = document.getElementById("nightBtn");
+      btn.textContent = `Night Vision: ${isOn ? "ON" : "OFF"}`;
+      btn.classList.toggle("active", isOn);
+    }
+
+    function showTab(name) {
+      document.getElementById("evidenceTab").classList.toggle("hidden", name !== "evidence");
+      document.getElementById("chainTab").classList.toggle("hidden", name !== "chain");
+      document.getElementById("tabEvidence").classList.toggle("active", name === "evidence");
+      document.getElementById("tabChain").classList.toggle("active", name === "chain");
+    }
+
+    function openImage(src) {
+      document.getElementById("modalImg").src = src;
+      document.getElementById("imgModal").classList.remove("hidden");
+    }
+
+    async function verifyItem(filename) {
+      const res = await fetch(`/api/verify/${encodeURIComponent(filename)}`, { method: "POST" });
+      const result = await res.json();
+      verificationCache[filename] = result;
+      await refreshDashboard();
+    }
+
+    function renderChart(incidents) {
+      const hourCounts = {};
+      incidents.forEach(inc => {
+        const hour = (inc.timestamp || "").slice(11, 13);
+        if (hour) hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      });
+      const hours = Object.keys(hourCounts).sort();
+      const box = document.getElementById("chartBars");
+      if (hours.length === 0) {
+        box.innerHTML = `<div style="color:#64748b; font-size:12px; margin:auto;">No intrusion analytics yet.</div>`;
+        return;
+      }
+      const maxVal = Math.max(...Object.values(hourCounts), 1);
+      box.innerHTML = hours.map(h => {
+        const pct = Math.max(12, Math.round((hourCounts[h] / maxVal) * 100));
+        return `<div class="bar-col">
+          <div style="font-size:10px;color:#cbd5e1;margin-bottom:3px;">${hourCounts[h]}</div>
+          <div class="bar" style="height:${pct}%"></div>
+          <div class="bar-label">${h}:00</div>
+        </div>`;
+      }).join("");
+    }
+
+    async function refreshDashboard() {
+      try {
+        const [stRes, incRes, chRes, auRes] = await Promise.all([
+          fetch("/api/status"),
+          fetch("/api/incidents"),
+          fetch("/api/blockchain"),
+          fetch("/api/audit_log")
+        ]);
+        const status = await stRes.json();
+        const incData = await incRes.json();
+        const chData = await chRes.json();
+        const auData = await auRes.json();
+
+        const sel = document.getElementById("cameraSelect");
+        const camEntries = Object.entries(status.cameras);
+        if (sel.options.length !== camEntries.length) {
+          sel.innerHTML = camEntries.map(([id, info]) => `<option value="${id}">${info.name}</option>`).join("");
+        }
+        sel.value = status.active_camera;
+        document.getElementById("kpiCamName").textContent = status.cameras[status.active_camera]?.name || status.active_camera;
+        updateNightBtn(status.night_mode);
+
+        document.getElementById("kpiIncidents").textContent = status.total_incidents;
+        document.getElementById("kpiBlocks").textContent = status.total_blocks;
+
+        const banner = document.getElementById("alertBanner");
+        const vBox = document.getElementById("videoBox");
+        if (status.latest_alert) {
+          banner.classList.add("danger");
+          vBox.classList.add("alert-active");
+          banner.innerHTML = `<strong>INTRUSION ALERT:</strong> Person ID #${status.latest_alert.person_id} detected on ${status.latest_alert.camera_id} at ${status.latest_alert.timestamp} (Evidence sealed on Blockchain)`;
+        }
+
+        const tbody = document.getElementById("evidenceTable");
+        if (incData.incidents.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="color:#64748b; text-align:center;">No intrusions recorded yet. Enter the red zone to capture &amp; seal evidence.</td></tr>`;
+        } else {
+          tbody.innerHTML = incData.incidents.map(inc => {
+            const v = verificationCache[inc.image_filename];
+            const vHtml = v
+              ? (v.verified
+                  ? `<span class="status-ok">VERIFIED</span> <button class="btn-verify" onclick="verifyItem('${inc.image_filename}')">Re-check</button>`
+                  : `<span class="status-bad">${v.status}</span> <button class="btn-verify" onclick="verifyItem('${inc.image_filename}')">Re-check</button>`)
+              : `<button class="btn-verify" onclick="verifyItem('${inc.image_filename}')">Verify Integrity</button>`;
+            const imgUrl = `/api/evidence/${encodeURIComponent(inc.image_filename)}`;
+            return `<tr>
+              <td><img class="thumb" src="${imgUrl}" onclick="openImage('${imgUrl}')" /></td>
+              <td>${inc.timestamp}</td>
+              <td>${inc.camera_id}</td>
+              <td><strong>#${inc.person_id}</strong> (${inc.confidence ?? "N/A"})</td>
+              <td class="mono" title="${inc.evidence_hash}">${inc.evidence_hash.slice(0, 18)}...</td>
+              <td class="mono">#${inc.block_index} / ${inc.tx_id}</td>
+              <td>${vHtml}</td>
+            </tr>`;
+          }).join("");
+        }
+
+        document.getElementById("chainTable").innerHTML = chData.chain.map(b => `<tr>
+          <td><strong>#${b.index}</strong></td>
+          <td>${b.timestamp}</td>
+          <td>${b.image_filename}</td>
+          <td class="mono">${b.previous_hash.slice(0, 16)}...</td>
+          <td class="mono">${b.block_hash.slice(0, 16)}...</td>
+          <td class="mono">${b.tx_id}</td>
+        </tr>`).join("");
+
+        renderChart(incData.incidents);
+        document.getElementById("auditList").innerHTML = auData.logs.slice(0, 12).map(l =>
+          `<div class="audit-item"><span>${l.timestamp}</span><strong>${l.user}:</strong> ${l.action}</div>`
+        ).join("");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
